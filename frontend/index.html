@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orquestrador - Gestão Pessoal</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; }
+    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+    
+    /* Header */
+    header { background: linear-gradient(135deg, #1a1a2e, #16213e); color: white; padding: 20px; text-align: center; border-radius: 15px; margin-bottom: 20px; }
+    header h1 { font-size: 28px; margin-bottom: 5px; }
+    header p { opacity: 0.8; font-size: 14px; }
+    
+    /* Cards do Dashboard */
+    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .card h3 { font-size: 14px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .card .value { font-size: 36px; font-weight: bold; }
+    .card.purple .value { color: #6c5ce7; }
+    .card.green .value { color: #00b894; }
+    .card.blue .value { color: #0984e3; }
+    
+    /* Progress Bar */
+    .progress-bar { background: #e0e0e0; border-radius: 10px; height: 10px; margin-top: 10px; }
+    .progress-fill { background: linear-gradient(90deg, #6c5ce7, #a29bfe); height: 100%; border-radius: 10px; transition: width 0.5s; }
+    
+    /* Tabs */
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab { padding: 12px 20px; border: none; background: white; border-radius: 10px; cursor: pointer; font-weight: 500; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.3s; }
+    .tab.active { background: #6c5ce7; color: white; }
+    .tab:hover { transform: translateY(-2px); }
+    
+    /* Conteúdo */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    /* Listas */
+    .list-item { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 5px rgba(0,0,0,0.1); }
+    .list-item .info h4 { margin-bottom: 5px; }
+    .list-item .info p { font-size: 12px; color: #888; }
+    
+    /* Botões */
+    .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.3s; }
+    .btn-primary { background: #6c5ce7; color: white; }
+    .btn-success { background: #00b894; color: white; }
+    .btn-danger { background: #d63031; color: white; padding: 8px 12px; font-size: 12px; }
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    
+    /* Formulários */
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 14px; }
+    .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+    
+    /* Modal Simples */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+    .modal { background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; }
+    .modal h3 { margin-bottom: 20px; }
+    
+    /* Cronômetro */
+    .cronometro-display { font-size: 60px; text-align: center; font-weight: bold; margin: 20px 0; color: #6c5ce7; }
+    .cronometro-botoes { display: flex; gap: 10px; justify-content: center; }
+    
+    /* Meta semanal */
+    .meta-card { background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    
+    /* Responsivo */
+    @media (max-width: 480px) {
+      .container { padding: 10px; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .cronometro-display { font-size: 40px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <!-- Header -->
+    <header>
+      <h1>🎯 Orquestrador</h1>
+      <p>Pós Cloud Computing • Inglês • Projetos</p>
+    </header>
+
+    <!-- Dashboard -->
+    <div class="dashboard-grid" id="dashboard">
+      <div class="card purple">
+        <h3>📚 Progresso Pós</h3>
+        <div class="value" id="dash-progresso">0%</div>
+        <div class="progress-bar"><div class="progress-fill" id="dash-bar" style="width:0%"></div></div>
+      </div>
+      <div class="card green">
+        <h3>🇺🇸 Inglês Semanal</h3>
+        <div class="value" id="dash-ingles-horas">0h</div>
+        <small id="dash-ingles-meta">Meta: 5h</small>
+        <div class="progress-bar"><div class="progress-fill" id="dash-ingles-bar" style="width:0%; background: #00b894;"></div></div>
+      </div>
+      <div class="card blue">
+        <h3>📋 Atividades</h3>
+        <div class="value" id="dash-atividades">0</div>
+        <small>concluídas</small>
+      </div>
+    </div>
+
+    <!-- Tabs de Navegação -->
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('pos')">📚 Pós-Graduação</button>
+      <button class="tab" onclick="showTab('ingles')">🇺🇸 Inglês</button>
+    </div>
+
+    <!-- ========== TAB PÓS ========== -->
+    <div id="tab-pos" class="tab-content active">
+      <button class="btn btn-primary" onclick="openModal('modal-disciplina')" style="margin-bottom:15px;">+ Nova Disciplina</button>
+      <div id="lista-disciplinas"></div>
+    </div>
+
+    <!-- Modal Nova Disciplina -->
+    <div class="modal-overlay" id="modal-disciplina">
+      <div class="modal">
+        <h3>Nova Disciplina</h3>
+        <div class="form-group">
+          <label>Nome da Disciplina</label>
+          <input type="text" id="disc-nome" placeholder="Ex: Arquitetura em Nuvem">
+        </div>
+        <div class="form-group">
+          <label>Descrição (opcional)</label>
+          <input type="text" id="disc-descricao" placeholder="Ex: Módulo 3">
+        </div>
+        <div class="form-group">
+          <label>Data Limite</label>
+          <input type="date" id="disc-limite" value="2027-05-12">
+        </div>
+        <div style="display:flex; gap:10px; justify-content: flex-end;">
+          <button class="btn" onclick="closeModal('modal-disciplina')">Cancelar</button>
+          <button class="btn btn-primary" onclick="salvarDisciplina()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== TAB INGLÊS ========== -->
+    <div id="tab-ingles" class="tab-content">
+      <!-- Meta Semanal -->
+      <div class="meta-card" style="text-align:center;">
+        <h3>⏱️ Meta Semanal: 5 horas</h3>
+        <div class="cronometro-display" id="cronometro-display">00:00:00</div>
+        <div class="cronometro-botoes">
+          <button class="btn btn-success" id="btn-iniciar" onclick="toggleCronometro()">▶ Iniciar</button>
+          <button class="btn btn-danger" id="btn-parar" onclick="pararCronometro()" style="display:none;">⏹ Parar</button>
+        </div>
+        <p style="margin-top:10px; color:#888;" id="tempo-manual-link" onclick="openModal('modal-tempo')">+ Registrar tempo manualmente</p>
+      </div>
+
+      <button class="btn btn-primary" onclick="openModal('modal-atividade-ingles')" style="margin-bottom:15px;">+ Nova Atividade</button>
+      <div id="lista-atividades-ingles"></div>
+    </div>
+
+    <!-- Modal Registrar Tempo Manual -->
+    <div class="modal-overlay" id="modal-tempo">
+      <div class="modal">
+        <h3>Registrar Tempo de Estudo</h3>
+        <div class="form-group">
+          <label>Minutos estudados</label>
+          <input type="number" id="tempo-minutos" min="1" max="480" placeholder="Ex: 45">
+        </div>
+        <div class="form-group">
+          <label>Tipo</label>
+          <select id="tempo-tipo">
+            <option value="ingles">Inglês</option>
+            <option value="pos">Pós-Graduação</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:10px; justify-content: flex-end;">
+          <button class="btn" onclick="closeModal('modal-tempo')">Cancelar</button>
+          <button class="btn btn-primary" onclick="registrarTempoManual()">Registrar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Nova Atividade Inglês -->
+    <div class="modal-overlay" id="modal-atividade-ingles">
+      <div class="modal">
+        <h3>Nova Atividade de Inglês</h3>
+        <div class="form-group">
+          <label>Tipo</label>
+          <select id="ingles-tipo">
+            <option value="livro">📖 Livro</option>
+            <option value="video">📺 Vídeo</option>
+            <option value="outro">📝 Outro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Título</label>
+          <input type="text" id="ingles-titulo" placeholder="Ex: Capítulo 3 - Travel">
+        </div>
+        <div class="form-group">
+          <label>Descrição (opcional)</label>
+          <input type="text" id="ingles-descricao" placeholder="Ex: English Vocabulary in Use">
+        </div>
+        <div style="display:flex; gap:10px; justify-content: flex-end;">
+          <button class="btn" onclick="closeModal('modal-atividade-ingles')">Cancelar</button>
+          <button class="btn btn-primary" onclick="salvarAtividadeIngles()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ===== FUNÇÕES GLOBAIS =====
+    let cronometroInterval;
+    let cronometroSegundos = 0;
+    let sessaoid = null;
+
+    // Trocar abas
+    function showTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    // Abrir/fechar modais
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    // ===== CRONÔMETRO =====
+    async function toggleCronometro() {
+      if (cronometroInterval) {
+        // Pausar
+        clearInterval(cronometroInterval);
+        cronometroInterval = null;
+        document.getElementById('btn-iniciar').textContent = '▶ Continuar';
+      } else {
+        // Iniciar
+        if (!sessaoid) {
+          const res = await fetch('/api/sessoes/iniciar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tipo: 'ingles' })
+          });
+          const data = await res.json();
+          sessaoid = data.id;
+        }
+        document.getElementById('btn-iniciar').style.display = 'none';
+        document.getElementById('btn-parar').style.display = 'inline-block';
+        cronometroInterval = setInterval(atualizarCronometro, 1000);
+      }
+    }
+
+    function atualizarCronometro() {
+      cronometroSegundos++;
+      const h = Math.floor(cronometroSegundos / 3600);
+      const m = Math.floor((cronometroSegundos % 3600) / 60);
+      const s = cronometroSegundos % 60;
+      document.getElementById('cronometro-display').textContent = 
+        String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    async function pararCronometro() {
+      clearInterval(cronometroInterval);
+      cronometroInterval = null;
+      document.getElementById('btn-iniciar').style.display = 'inline-block';
+      document.getElementById('btn-parar').style.display = 'none';
+      document.getElementById('btn-iniciar').textContent = '▶ Iniciar Novo';
+
+      if (sessaoid) {
+        await fetch('/api/sessoes/' + sessaoid + '/finalizar', { method: 'PUT' });
+        sessaoid = null;
+        cronometroSegundos = 0;
+        document.getElementById('cronometro-display').textContent = '00:00:00';
+        carregarDashboard();
+      }
+    }
+
+    async function registrarTempoManual() {
+      const minutos = document.getElementById('tempo-minutos').value;
+      const tipo = document.getElementById('tempo-tipo').value;
+      if (!minutos || minutos <= 0) return alert('Informe os minutos!');
+
+      // Criar sessão manual
+      const inicio = new Date(Date.now() - minutos * 60000).toISOString();
+      const res1 = await fetch('/api/sessoes/iniciar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo })
+      });
+      const data1 = await res1.json();
+      
+      await fetch('/api/sessoes/' + data1.id + '/finalizar', { method: 'PUT' });
+      
+      closeModal('modal-tempo');
+      document.getElementById('tempo-minutos').value = '';
+      carregarDashboard();
+      alert('Tempo registrado com sucesso!');
+    }
+
+    // ===== DISCIPLINAS =====
+    async function salvarDisciplina() {
+      const nome = document.getElementById('disc-nome').value;
+      const descricao = document.getElementById('disc-descricao').value;
+      const data_limite = document.getElementById('disc-limite').value;
+      
+      if (!nome) return alert('Digite o nome da disciplina!');
+
+      await fetch('/api/disciplinas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, descricao, data_limite })
+      });
+
+      closeModal('modal-disciplina');
+      document.getElementById('disc-nome').value = '';
+      document.getElementById('disc-descricao').value = '';
+      carregarDisciplinas();
+      carregarDashboard();
+    }
+
+    async function carregarDisciplinas() {
+      const res = await fetch('/api/disciplinas');
+      const disciplinas = await res.json();
+      
+      const container = document.getElementById('lista-disciplinas');
+      
+      if (disciplinas.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#888; padding:40px;">Nenhuma disciplina cadastrada ainda.<br>Clique em "+ Nova Disciplina" para começar!</p>';
+        return;
+      }
+
+      container.innerHTML = disciplinas.map(d => `
+        <div class="list-item" style="flex-direction:column; align-items:stretch;">
+          <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+            <div class="info">
+              <h4>📘 ${d.nome}</h4>
+              <p>${d.descricao || ''} ${d.data_limite ? '• Limite: ' + new Date(d.data_limite).toLocaleDateString() : ''}</p>
+            </div>
+            <div style="text-align:right;">
+              <strong>${d.progresso}%</strong>
+              <p style="font-size:12px;">${d.aulas_concluidas}/${d.total_aulas} aulas</p>
+              <button class="btn btn-danger" onclick="excluirDisciplina(${d.id})" style="margin-top:5px;">🗑️</button>
+            </div>
+          </div>
+          <div class="progress-bar" style="margin-top:10px;">
+            <div class="progress-fill" style="width:${d.progresso}%"></div>
+          </div>
+          <!-- Aulas -->
+          <div id="aulas-${d.id}" style="margin-top:10px; padding-left:15px; border-left:3px solid #6c5ce7;"></div>
+          <button class="btn" onclick="adicionarAula(${d.id})" style="margin-top:10px; font-size:12px;">+ Adicionar Aula</button>
+        </div>
+      `).join('');
+
+      // Carregar aulas de cada disciplina
+      disciplinas.forEach(d => carregarAulas(d.id));
+    }
+
+    async function carregarAulas(disciplinaId) {
+      const res = await fetch('/api/disciplinas/' + disciplinaId + '/aulas');
+      const aulas = await res.json();
+      
+      const container = document.getElementById('aulas-' + disciplinaId);
+      container.innerHTML = aulas.map(a => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f0f0f0;">
+          <span style="text-decoration:${a.concluida ? 'line-through' : 'none'}; color:${a.concluida ? '#00b894' : '#333'}; cursor:pointer;" 
+                onclick="toggleAula(${a.id}, ${disciplinaId})">
+            ${a.concluida ? '✅' : '⬜'} ${a.titulo}
+          </span>
+          <small style="color:#888;">${a.tema || ''}</small>
+        </div>
+      `).join('');
+    }
+
+    async function adicionarAula(disciplinaId) {
+      const titulo = prompt('Título da aula:');
+      if (!titulo) return;
+      const tema = prompt('Tema da aula (opcional):');
+      
+      await fetch('/api/disciplinas/' + disciplinaId + '/aulas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titulo, tema: tema || '' })
+      });
+      
+      carregarAulas(disciplinaId);
+      carregarDisciplinas();
+    }
+
+    async function toggleAula(aulaId, disciplinaId) {
+      const res = await fetch('/api/aulas/' + aulaId + '/toggle', { method: 'PUT' });
+      const data = await res.json();
+      carregarAulas(disciplinaId);
+      carregarDisciplinas();
+      carregarDashboard();
+    }
+
+    async function excluirDisciplina(id) {
+      if (!confirm('Tem certeza que deseja excluir esta disciplina e todas as suas aulas?')) return;
+      await fetch('/api/disciplinas/' + id, { method: 'DELETE' });
+      carregarDisciplinas();
+      carregarDashboard();
+    }
+
+    // ===== INGLÊS =====
+    async function salvarAtividadeIngles() {
+      const tipo = document.getElementById('ingles-tipo').value;
+      const titulo = document.getElementById('ingles-titulo').value;
+      const descricao = document.getElementById('ingles-descricao').value;
+      
+      if (!titulo) return alert('Digite o título!');
+
+      await fetch('/api/ingles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo, titulo, descricao })
+      });
+
+      closeModal('modal-atividade-ingles');
+      document.getElementById('ingles-titulo').value = '';
+      document.getElementById('ingles-descricao').value = '';
+      carregarAtividadesIngles();
+    }
+
+    async function carregarAtividadesIngles() {
+      const res = await fetch('/api/ingles');
+      const atividades = await res.json();
+      
+      const container = document.getElementById('lista-atividades-ingles');
+      
+      if (atividades.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#888; padding:40px;">Nenhuma atividade cadastrada.<br>Comece adicionando um livro, vídeo ou outro material!</p>';
+        return;
+      }
+
+      const icones = { livro: '📖', video: '📺', outro: '📝' };
+      
+      container.innerHTML = atividades.map(a => `
+        <div class="list-item">
+          <div class="info" style="cursor:pointer;" onclick="toggleAtividadeIngles(${a.id})">
+            <h4>${icones[a.tipo] || '📝'} ${a.titulo} ${a.concluida ? '✅' : ''}</h4>
+            <p>${a.descricao || ''} • ${a.duracao_minutos}min • ${new Date(a.data_criacao).toLocaleDateString()}</p>
+          </div>
+          <div>
+            <button class="btn btn-success" onclick="registrarTempoAtividade(${a.id})">⏱️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function toggleAtividadeIngles(id) {
+      const res = await fetch('/api/ingles/' + id, { method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ concluida: 1 })
+      });
+      carregarAtividadesIngles();
+      carregarDashboard();
+    }
+
+    async function registrarTempoAtividade(id) {
+      const minutos = prompt('Quantos minutos estudou esta atividade?');
+      if (!minutos) return;
+      await fetch('/api/ingles/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duracao_minutos: parseInt(minutos) })
+      });
+      carregarAtividadesIngles();
+    }
+
+    // ===== DASHBOARD =====
+    async function carregarDashboard() {
+      const res = await fetch('/api/dashboard');
+      const data = await res.json();
+      
+      document.getElementById('dash-progresso').textContent = data.progresso_geral + '%';
+      document.getElementById('dash-bar').style.width = data.progresso_geral + '%';
+      
+      const horas = (data.ingles_total_minutos / 60).toFixed(1);
+      document.getElementById('dash-ingles-horas').textContent = horas + 'h';
+      document.getElementById('dash-ingles-bar').style.width = Math.min((data.ingles_total_minutos / 300) * 100, 100) + '%';
+      
+      document.getElementById('dash-atividades').textContent = data.ingles_concluidas;
+    }
+
+    // ===== INICIALIZAR =====
+    carregarDashboard();
+    carregarDisciplinas();
+    carregarAtividadesIngles();
+  </script>
+</body>
+</html>
